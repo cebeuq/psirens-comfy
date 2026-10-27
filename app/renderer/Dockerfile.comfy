@@ -1,0 +1,8 @@
+# Renderer for ComfyUI mode: no GPU, no torch. Turns render targets from the
+# orchestrator into FLUX 3 Image Klein workflow runs via the Comfy SDK.
+FROM python:3.12-slim-bookworm
+RUN pip install --no-cache-dir "comfy-sdk[pil]==0.5.0" "comfy-api-proxy==0.1.6" \
+    "websockets>=12" "pillow>=10" "numpy>=1.26" httpx
+WORKDIR /srv/renderer
+ENV PYTHONPATH=/srv/renderer PYTHONDONTWRITEBYTECODE=1
+CMD ["python", "-m", "psirens_renderer.main"]

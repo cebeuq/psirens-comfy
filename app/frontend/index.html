@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Psirens — Voice Intent Engine</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">psirens <span class="sub">voice intent engine</span></div>
+  <button id="micBtn" class="mic-btn" title="start / stop (resets the session)">&#127908; start</button>
+  <button id="pauseBtn" class="mic-btn" title="pause / resume listening (keeps the canvas and history)" hidden>&#9208; pause</button>
+  <canvas id="waveform" width="360" height="44"></canvas>
+  <div class="chips">
+    <span id="connChip" class="chip off">disconnected</span>
+    <span id="sessionChip" class="chip off">no session</span>
+    <span id="dropChip" class="chip off" hidden>drops: 0</span>
+    <span id="calibChip" class="chip warn" hidden>calibrating</span>
+  </div>
+  <div class="chips loops">
+    <span id="reflexChip" class="chip loop-chip" title="reflex: word-rate control">⚡ reflex —</span>
+    <span id="commitChip" class="chip loop-chip" title="commits: on pause">✔ commit —</span>
+    <span id="llmChip" class="chip loop-chip" title="LLM calls this session">🧠 0 calls</span>
+  </div>
+  <div class="chips" id="modeTabs">
+    <button class="res-btn" data-res="512" title="render resolution">512</button>
+    <button class="res-btn" data-res="768" title="render resolution">768</button>
+    <button class="res-btn" data-res="1024" title="render resolution">1024</button>
+    <button id="gpuFreeBtn" class="res-btn gpu-btn"
+            title="unload all models so the GPU is free for other work">free gpu</button>
+    <button id="gpuLoadBtn" class="res-btn gpu-btn"
+            title="reload all models onto the GPU">load gpu</button>
+    <button class="res-btn engine-btn" data-engine="klein"
+            title="FLUX.2 Klein 9B — fastest, full edit machinery">klein</button>
+    <button class="res-btn engine-btn" data-engine="u15"
+            title="SenseNova U1.5 8B — strongest instruction following">u1.5</button>
+    <button class="res-btn engine-btn" data-engine="h3"
+            title="MiniMax H3 33B — heaviest, single-frame video engine">h3</button>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="panel" id="canvasPanel">
+    <h2>canvas <button id="backBtn" class="res-btn back-btn"
+        title="go back to the previous render (instant, no AI)">⟲ back</button><button
+        id="fwdBtn" class="res-btn back-btn"
+        title="go forward again after going back (instant, no AI)">forward ⟳</button></h2>
+    <div class="canvas-wrap">
+      <img id="canvasImg" alt="live canvas" hidden>
+      <canvas id="overlay" hidden></canvas>
+      <div id="selChip" hidden><span id="selName"></span><button id="selDel" title="delete this and fill in the background">🗑</button><button id="selX" title="deselect">×</button></div>
+      <div id="sketchPip" hidden><img id="sketchImg" alt="sketch"><span>sketch</span></div>
+      <div id="canvasEmpty" class="placeholder">the canvas paints as you talk</div>
+      <div id="insertGhost" hidden>
+        <img id="insertGhostImg" alt="object preview" draggable="false">
+        <div class="ig-handle ig-rot" title="drag to rotate">&#8635;</div>
+        <div class="ig-handle ig-resize" title="drag to resize">&#8690;</div>
+        <div class="ig-actions"><button id="igOk"
+          title="place it now">&#10003;</button><button id="igX"
+          title="cancel">&times;</button></div>
+        <div id="igLabel" class="ig-label">cutting out&hellip;</div>
+      </div>
+    </div>
+    <div id="canvasMeta" class="canvas-meta"></div>
+    <div id="refZone" class="ref-zone">
+      <div id="refZoneHint" class="ref-hint">🎨 style references — drop
+        images here (drop ON the picture to insert an object)</div>
+      <div id="refTray" class="ref-tray"></div>
+    </div>
+  </section>
+  <div class="gutter" data-g="0" title="drag to resize"></div>
+  <section class="panel" id="transcriptPanel">
+    <h2>transcript</h2>
+    <div id="transcript" class="scroll">
+      <div id="committedBlocks"></div>
+      <div><span id="finalWords"></span> <span id="partialLine" class="partial"></span></div>
+    </div>
+  </section>
+
+  <div class="gutter" data-g="1" title="drag to resize"></div>
+  <section class="panel" id="tonePanel">
+    <h2>tone</h2>
+    <div id="levelMeterRow" class="meter-row">
+      <label>mic level</label>
+      <div class="meter"><div id="levelFill" class="fill"></div></div>
+      <span id="levelVal" class="val">–</span>
+    </div>
+    <div class="meter-row">
+      <label>end of turn</label>
+      <div class="meter"><div id="eotFill" class="fill"></div></div>
+      <span id="eotVal" class="val">–</span>
+    </div>
+    <div id="toneMeters">
+      <div class="meter-row"><label>energy</label>
+        <div class="meter"><div id="m_energy" class="fill"></div></div>
+        <span id="b_energy" class="val">–</span></div>
+      <div class="meter-row"><label>valence</label>
+        <div class="meter"><div id="m_valence" class="fill"></div></div>
+        <span id="b_valence" class="val">–</span></div>
+      <div class="meter-row"><label>arousal</label>
+        <div class="meter"><div id="m_arousal" class="fill"></div></div>
+        <span id="b_arousal" class="val">–</span></div>
+      <div class="meter-row"><label>tempo</label>
+        <div class="meter"><div id="m_tempo" class="fill"></div></div>
+        <span id="b_tempo" class="val">–</span></div>
+      <div class="meter-row"><label>hesitation</label>
+        <div class="meter"><div id="m_hesitation" class="fill"></div></div>
+        <span id="b_hesitation" class="val">–</span></div>
+      <div class="meter-row"><label>pitch</label>
+        <div class="meter"><div id="m_pitch" class="fill"></div></div>
+        <span id="b_pitch" class="val">–</span></div>
+    </div>
+  </section>
+
+  <div class="gutter" data-g="2" title="drag to resize"></div>
+  <section class="panel" id="scenePanel">
+    <h2>scene state</h2>
+    <div id="sceneFields" class="scroll"></div>
+    <div id="magRow" class="meter-row" hidden>
+      <label>magnitude</label>
+      <div class="meter"><div id="magFill" class="fill"></div></div>
+      <span id="magVal" class="val">–</span>
+    </div>
+  </section>
+
+  <div class="gutter" data-g="3" title="drag to resize"></div>
+  <section class="panel" id="timelinePanel">
+    <h2>timeline &amp; prompt</h2>
+    <div id="timeline" class="scroll half"></div>
+    <div id="promptBox" class="prompt-box">— no prompt yet —</div>
+  </section>
+</main>
+
+<footer>
+  <details id="eventDrawer">
+    <summary>raw events <span id="eventCount" class="chip off">0</span>
+      <a id="jsonlLink" href="#" hidden>download events.jsonl</a></summary>
+    <pre id="eventLog" class="scroll"></pre>
+  </details>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

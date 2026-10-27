@@ -1,0 +1,107 @@
+# All tunable values for the voice intent engine live in this one file.
+# The commit detector and prosody thresholds get tuned via the replay harness.
+
+audio:
+  sample_rate: 24000        # Kyutai STT native rate; asserted against model config at load
+  frame_ms: 80              # one browser frame == one Kyutai model step (12.5 Hz)
+
+ui:
+  audio_level_hz: 4         # rate of audio_level events sent to the browser
+  vad_event_hz: 4           # throttle for vad_state events to the browser (full rate in JSONL)
+
+paths:
+  data_dir: /srv/data       # sessions land in <data_dir>/sessions/<session-id>/
+
+stt:
+  enabled: true
+  # "nemotron": NVIDIA nemotron-speech-streaming 0.6B (160ms chunks,
+  #   punctuation, ~2x faster word finalization) + parakeet EOU 120M for
+  #   the end-of-turn signal. "kyutai": the previous engine (rollback).
+  engine: nemotron
+  model: nvidia/nemotron-speech-streaming-en-0.6b
+  # rollback engine model (the -candle variant carries the VAD heads):
+  kyutai_model: kyutai/stt-1b-en_fr-candle
+
+prosody:
+  enabled: true
+  frame_hop_ms: 250
+  energy_window_ms: 1000
+  pitch_window_ms: 1500
+  pitch_tail_ms: 600
+  tempo_window_ms: 3000
+  hesitation_window_ms: 5000
+  warmup_s: 10
+  ser:
+    model: audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim
+    window_s: 3.0
+    hop_s: 1.0
+  # absolute cold-start bucket edges (used until per-session calibration kicks in)
+  cold_start:
+    energy_dbfs: [-35, -20]   # below low / above high
+    tempo_wps: [2.0, 3.5]
+    valence: [0.4, 0.6]
+    arousal: [0.4, 0.6]
+
+commit:
+  enabled: true
+  eot_enter: 0.6            # semantic-VAD end-of-turn probability to enter MAYBE_DONE
+  eot_exit: 0.4             # dropping below this while in MAYBE_DONE = hold signal
+  pause_min_ms: 500
+  confirm_ms: 550
+  hold_timeout_ms: 2500
+  # 1, not 2: single-word directives are real ("Wood." "Redder." "Bigger.")
+  # — a junk single word costs one no-op editor call; a dropped directive
+  # costs the user's trust
+  min_content_words: 1
+  pitch_rise_hz_per_s: 40   # tail slope above this = rising intonation = hold
+  fillers: [um, uh, er, erm, hmm, mm, like, so, and, but, well]
+
+# Reflex loop (L0): word-rate canvas control. Short fragments are classified
+# into a closed action menu (move/scale/style/undo/stop/none) by the draft
+# model; all math happens in code. Utterances fully consumed by the grammar
+# commit without any LLM call.
+reflex:
+  enabled: true
+  base_url: http://vllm:8000/v1
+  model_env: DRAFT_MODEL
+  timeout_s: 5.0
+  fragment_gap_ms: 250    # fire when no new word for this long...
+  fragment_max_words: 4   # ...or the fragment reaches this many words
+  strength: 0.3           # render strength for reflex nudges
+
+# Fast loop (v2 streaming): provisional draft patches from unfinished speech.
+# Uses the SAME model+system prompt as the slow editor so both share one vLLM
+# prefix cache. (LFM2.5-230M was benched as a dedicated draft model and failed
+# — empty/garbled patches; a distilled tiny draft model is future work.)
+draft:
+  enabled: false  # retired with the pre-Flux draft loop; A1B service removed
+  base_url: http://vllm:8000/v1
+  model_env: DRAFT_MODEL
+  min_words: 3          # stability gate: fire only with >=3 finalized words
+  cadence_ms: 1200      # min interval between draft requests (widens on timeouts)
+  # a draft MUST be finishable inside its own timeout, or every draft is
+  # doomed by construction and its abandoned generation starves the commit
+  # editor. 140 tokens covers 1 entity add + 2 field edits; at the A1B's
+  # observed 20-50 tok/s under load that is ~3-7s incl. prefill, inside 8s.
+  max_tokens: 140
+  timeout_s: 8.0
+  strength: 0.25        # render-strength cap for provisional canvas nudges
+
+editor:
+  enabled: true
+  base_url: http://vllm:8000/v1
+  model_env: EDITOR_MODEL   # actual model name comes from the .env file
+  temperature: 0.0   # deterministic patches; also keeps replays reproducible
+  # the patch schema now REQUIRES grounding/target/contact/difficulty on
+  # top of entity edits + field edits + edit_instruction; a multi-part
+  # directive ("lawn grass + pool + hot tub") exceeded 300 and the JSON
+  # truncated mid-string (invalid patch after 2 tries — edit dropped)
+  max_tokens: 700
+  # GB10 decode under full-pipeline contention can exceed 8s for the commit
+  # editor; the 300-500ms spec budget assumes production hardware.
+  timeout_s: 20.0
+  max_retries: 1
+  # anti-rewrite guard: reject patches touching more than this many fields
+  # when edit_magnitude is below the threshold
+  minimality_max_fields: 3
+  minimality_below_magnitude: 0.5

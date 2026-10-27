@@ -1,0 +1,21 @@
+[project]
+name = "psirens-voice"
+version = "0.1.0"
+description = "Psirens voice intent engine: streaming STT, prosody, commit detection, LLM delta editor"
+requires-python = ">=3.10"
+# The runtime image (nvcr.io/nvidia/vllm:26.05-py3) already ships fastapi,
+# uvicorn, pydantic, numpy, pyyaml, websockets, soundfile, torch, transformers.
+# These floors document what the code needs; the Dockerfile installs nothing
+# that would upgrade the NVIDIA-pinned stack.
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "pydantic>=2.6",
+  "numpy>=1.26",
+  "PyYAML>=6.0",
+  "websockets>=12.0",
+  "soundfile>=0.12",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

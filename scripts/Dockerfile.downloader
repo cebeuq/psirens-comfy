@@ -1,0 +1,5 @@
+# One-shot model fetcher: `docker compose run --rm downloader`
+FROM python:3.12-slim-bookworm
+RUN pip install --no-cache-dir "huggingface_hub[hf_xet]==2.3.0"
+COPY download_models.py /usr/local/bin/download_models.py
+ENTRYPOINT ["python", "-I", "/usr/local/bin/download_models.py"]

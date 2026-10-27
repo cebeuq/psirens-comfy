@@ -1,0 +1,234 @@
+# Psirens for ComfyUI: talk to your canvas.
+#
+#   browser mic -> orchestrator (speech-to-text, prosody, commit detector,
+#   LLM scene editor) -> renderer (Comfy SDK client) -> ComfyUI
+#   (FLUX 3 Image Klein + the comfyui-psirens node pack) -> live canvas
+#
+# GPU split (defaults fit one 24 GB card for ComfyUI + one ~10 GB card for
+# the voice side; override the device IDs in .env):
+#   COMFY_GPU  -> ComfyUI
+#   VOICE_GPU  -> vLLM editor model + speech-to-text
+name: psirens-comfy
+
+x-logging: &logging
+  driver: local
+  options: { max-size: "20m", max-file: "3" }
+
+services:
+  comfyui:
+    build:
+      context: .
+      dockerfile: comfyui/Dockerfile
+      args: { COMFY_REF: "${COMFY_REF:-v0.42.5}" }
+    image: psirens-comfy/comfyui:${COMFY_REF:-v0.42.5}
+    restart: "no"
+    command: ["python", "main.py", "--listen", "0.0.0.0", "--port", "8188",
+              "--preview-method", "auto", "--use-pytorch-cross-attention"]
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${COMFY_PORT:-8288}:8188"
+    volumes:
+      - ./models/comfy/diffusion_models:/opt/comfyui/models/diffusion_models:ro
+      - ./models/comfy/text_encoders:/opt/comfyui/models/text_encoders:ro
+      - ./models/comfy/vae:/opt/comfyui/models/vae:ro
+      - ./custom_nodes/comfyui-psirens:/opt/comfyui/custom_nodes/comfyui-psirens:ro
+      - ./workflows:/opt/comfyui/user/default/workflows/psirens:ro
+      - comfy-user:/opt/comfyui/user
+      - comfy-io:/opt/comfyui/output
+      - comfy-input:/opt/comfyui/input
+    environment:
+      PSIRENS_VOICE_URL: http://orchestrator:8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${COMFY_GPU:-0}"]
+              capabilities: [gpu]
+    mem_limit: ${COMFY_MEM:-16g}
+    cpus: 6
+    pids_limit: 1024
+    shm_size: 4g
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8188/system_stats"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    logging: *logging
+    networks: [psirens]
+
+  vllm:
+    image: vllm/vllm-openai:v0.27.0-cu129-ubuntu2404
+    restart: "no"
+    command: >
+      --model ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
+      --served-model-name ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
+      --host 0.0.0.0 --port 8000
+      --max-model-len 8192
+      --max-num-seqs 8
+      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.55}
+      --limit-mm-per-prompt '{"image":2,"video":0}'
+      --mm-processor-kwargs '{"max_pixels":409600}'
+      --enable-prefix-caching
+      --default-chat-template-kwargs '{"enable_thinking":false}'
+      --structured-outputs-config '{"backend":"xgrammar","disable_any_whitespace":true}'
+    environment:
+      HF_HOME: /models/hf
+      HF_HUB_OFFLINE: "1"
+    ports:
+      - "127.0.0.1:8801:8000"
+    volumes:
+      - ./models/hf:/models/hf
+      # torch.compile cache: restarts skip the multi-minute recompile
+      - ./models/vllm-cache:/root/.cache/vllm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${VOICE_GPU:-1}"]
+              capabilities: [gpu]
+    mem_limit: 8g
+    cpus: 6
+    pids_limit: 2048
+    shm_size: 2g
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 600s
+    logging: *logging
+    networks: [psirens]
+
+  orchestrator:
+    build:
+      context: app/voice
+    image: psirens-comfy/orchestrator:latest
+    restart: "no"
+    depends_on:
+      vllm: { condition: service_healthy }
+    ports:
+      - "${BIND_IP:-127.0.0.1}:${APP_PORT:-8800}:8000"
+    environment:
+      PSIRENS_CONFIG: /srv/app/config/default.yaml
+      PSIRENS_FRONTEND: /srv/frontend
+      PSIRENS_DATA: /srv/data
+      STT_ENGINE: nemotron
+      EDITOR_MODEL: ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
+      DRAFT_MODEL: ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
+      PSIRENS_EDIT_MODE: atelier
+      HF_HOME: /models/hf
+    volumes:
+      - ./app/voice:/srv/app:ro
+      - ./app/frontend:/srv/frontend:ro
+      - ./data:/srv/data
+      - ./models/hf:/models/hf
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${VOICE_GPU:-1}"]
+              capabilities: [gpu]
+    mem_limit: 8g
+    cpus: 6
+    pids_limit: 1024
+    shm_size: 2g
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 300s
+    logging: *logging
+    networks: [psirens]
+
+  renderer:
+    build:
+      context: app/renderer
+      dockerfile: Dockerfile.comfy
+    image: psirens-comfy/renderer:latest
+    restart: "no"
+    depends_on:
+      orchestrator: { condition: service_started }
+      comfy-api: { condition: service_started }
+    environment:
+      RENDERER_MODE: flux2
+      RENDER_ENGINE: comfy
+      COMFY_URL: http://comfyui:8188
+      # the Comfy SDK talks Comfy API v2 to the comfy-api service
+      COMFY_BASE_URL: http://comfy-api:8189
+      FEED_URL: ws://orchestrator:8000/ws/feed
+      FLUX2_SIZE: ${CANVAS_SIZE:-1024}
+      HEARTBEAT_FILE: /tmp/renderer-heartbeat
+    volumes:
+      - ./app/renderer:/srv/renderer:ro
+      - ./workflows:/srv/workflows:ro
+    tmpfs: [/tmp]
+    read_only: true
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    stop_grace_period: 10s
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import pathlib,time,sys; hb=pathlib.Path('/tmp/renderer-heartbeat'); sys.exit(0 if hb.exists() and time.time()-float(hb.read_text())<120 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging: *logging
+    networks: [psirens]
+
+  # Comfy's official API proxy: serves Comfy API v2 (jobs, assets, events)
+  # in front of the self-hosted ComfyUI, for the Comfy SDK. Reachable only on
+  # the private compose network (no published port), hence no token.
+  comfy-api:
+    image: psirens-comfy/renderer:latest
+    restart: "no"
+    command: ["comfy-api-proxy", "run", "--comfyui", "http://comfyui:8188",
+              "--host", "0.0.0.0", "--port", "8189", "--allow-insecure-bind"]
+    depends_on:
+      comfyui: { condition: service_healthy }
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 128
+    stop_grace_period: 10s
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8189/api/v2/status', timeout=3)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging: *logging
+    networks: [psirens]
+
+  # one-shot: docker compose --profile tools run --rm downloader [llm|voice|comfy]
+  downloader:
+    profiles: [tools]
+    build:
+      context: scripts
+      dockerfile: Dockerfile.downloader
+    image: psirens-comfy/downloader:latest
+    restart: "no"
+    environment:
+      EDITOR_MODEL: ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - ./models:/models
+    mem_limit: 2g
+    logging: *logging
+    networks: [psirens]
+
+volumes:
+  comfy-user: {}
+  comfy-io: {}
+  comfy-input: {}
+
+networks:
+  psirens: {}

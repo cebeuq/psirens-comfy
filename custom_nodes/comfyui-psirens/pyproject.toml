@@ -1,0 +1,11 @@
+[project]
+name = "comfyui-psirens"
+description = "Talk to your canvas: voice-steered, drift-free iterative image editing nodes for ComfyUI (FLUX 3 Image Klein)."
+version = "0.1.0"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.comfy]
+PublisherId = "cebeuq"
+DisplayName = "Psirens"

@@ -1,0 +1,1 @@
+# comfyui-psirens runtime deps (torch/numpy come with ComfyUI)
