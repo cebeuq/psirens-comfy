@@ -4,8 +4,9 @@
 #   LLM scene editor) -> renderer (Comfy SDK client) -> ComfyUI
 #   (FLUX 3 Image Klein + the comfyui-psirens node pack) -> live canvas
 #
-# GPU split (defaults fit one 24 GB card for ComfyUI + one ~10 GB card for
-# the voice side; override the device IDs in .env):
+# GPU: everything fits on ONE 24 GB card (developed on an RTX 3090):
+# FLUX 3 Image Klein INT8 + text encoder ~13.5 GB, editor LLM ~6 GB,
+# speech-to-text ~3.3 GB. With two cards, split them in .env:
 #   COMFY_GPU  -> ComfyUI
 #   VOICE_GPU  -> vLLM editor model + speech-to-text
 name: psirens-comfy
@@ -67,7 +68,7 @@ services:
       --host 0.0.0.0 --port 8000
       --max-model-len 8192
       --max-num-seqs 8
-      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.5}
+      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.25}
       --limit-mm-per-prompt '{"image":2,"video":0}'
       --mm-processor-kwargs '{"max_pixels":409600}'
       --enable-prefix-caching
@@ -88,7 +89,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["${VOICE_GPU:-1}"]
+              device_ids: ["${VOICE_GPU:-0}"]
               capabilities: [gpu]
     mem_limit: 8g
     cpus: 6
@@ -133,7 +134,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["${VOICE_GPU:-1}"]
+              device_ids: ["${VOICE_GPU:-0}"]
               capabilities: [gpu]
     mem_limit: 8g
     cpus: 6
@@ -202,7 +203,7 @@ services:
     pids_limit: 128
     stop_grace_period: 10s
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8189/api/v2/status', timeout=3)\""]
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8189/api/v2/health', timeout=3)\""]
       interval: 20s
       timeout: 5s
       retries: 5

@@ -88,9 +88,10 @@ Qwen3-VL-4B text encoder and FLUX.2 VAE: euler / simple, cfg 1, 8 steps
 
 ## Run it
 
-Requirements: Linux, Docker with the NVIDIA container toolkit, and either
-**two GPUs** (24 GB for ComfyUI + ≥10 GB for the voice side; developed on
-an RTX 3090 + RTX 3080) or **one ≥32 GB GPU** (point both IDs at it).
+Requirements: Linux, Docker with the NVIDIA container toolkit, and **one
+24 GB NVIDIA GPU**. The whole stack (FLUX 3 Image Klein + editor LLM +
+speech-to-text) was developed on a single RTX 3090. With two cards, set
+`COMFY_GPU` / `VOICE_GPU` in `.env` to split them.
 
 ```bash
 git clone <this repo> psirens-comfy && cd psirens-comfy
