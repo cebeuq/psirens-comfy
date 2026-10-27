@@ -45,6 +45,18 @@ def get(session: str, slot: str) -> dict | None:
         return dict(slots[slot])
 
 
+def restore(session: str, slot: str, keyframe: int) -> bool:
+    """Make keyframe <slot>@<keyframe> the current <slot> again (undo)."""
+    with _lock:
+        slots = _sessions.get(session)
+        src = slots.get(f"{slot}@{keyframe}") if slots else None
+        if src is None:
+            return False
+        slots[slot] = dict(src)
+        slots.move_to_end(slot)
+        return True
+
+
 def drop(session: str) -> None:
     with _lock:
         _sessions.pop(session, None)

@@ -145,6 +145,72 @@ function stop() {
   ui.btn.style.background = "#2b2b33";
 }
 
+function widgetValue(node, name, dflt) {
+  const w = node.widgets?.find((w) => w.name === name);
+  return w ? w.value : dflt;
+}
+
+// keyframes: every committed edit keeps its canvas latent as <slot>@<rev>,
+// so "no, go back" can restore it exactly (a no-op edit on the restored
+// latent; the token freeze makes it pixel-identical)
+// whole-image edits (restyle, relight, camera) move every token a little;
+// the token freeze would undo them, so it is switched off for those
+const GLOBAL_EDIT = /\b(entire|whole) (image|scene|picture|frame|canvas|thing)\b|\b(repaint|redraw|re-render) the (scene|image|picture)\b|\b(convert|turn|transform|restyle) (it|this|everything)\b|\bcamera\b|\bviewpoint\b/i;
+
+function setFreeze(on) {
+  for (const n of app.graph._nodes.filter((n) => n.type === "PsirensTokenPassthrough")) {
+    n.properties = n.properties || {};
+    if (n.properties.psirens_tau == null) n.properties.psirens_tau = widgetValue(n, "tau", 0.35);
+    setWidget(n, "tau", on ? n.properties.psirens_tau : 0);
+  }
+  // local edits keep the graph's seed (faithful repaint); whole-image edits
+  // need fresh noise, or the old seed pulls the picture back to what it was
+  for (const n of app.graph._nodes.filter((n) => /KSampler/.test(n.type))) {
+    n.properties = n.properties || {};
+    if (n.properties.psirens_seed == null) n.properties.psirens_seed = widgetValue(n, "seed", 0);
+    // a fresh roll becomes the picture's seed for the local edits after it
+    if (!on) n.properties.psirens_seed = Math.floor(Math.random() * 2 ** 31);
+    setWidget(n, "seed", n.properties.psirens_seed);
+  }
+}
+
+async function onCommitTarget(d) {
+  const nodes = voiceNodes();
+  if (!nodes.length) return;
+  const instr = d.edit_instruction || "";
+  setFreeze(d.restore_rev != null ||
+            !(d.camera || (d.strength ?? 0) >= 0.75 || GLOBAL_EDIT.test(instr)));
+  const rev = d.commit_rev ?? -1;
+  for (const n of app.graph._nodes.filter((n) => n.type === "PsirensCanvasSave")) {
+    setWidget(n, "keyframe", rev);
+  }
+  if (d.restore_rev != null) {
+    let restored = false;
+    for (const n of nodes) {
+      const r = await fetch(api_base() + "/psirens/restore", { method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session: widgetValue(n, "session", "ui"),
+                               slot: widgetValue(n, "slot", "latest"),
+                               rev: d.restore_rev }) }).catch(() => null);
+      restored = restored || (r && r.ok);
+    }
+    for (const n of nodes) {
+      setWidget(n, "scene", d.prompt || S.scene);
+      setWidget(n, "instruction", restored ? "Keep everything exactly the same."
+        : "Redraw the image to match: " + (d.prompt || S.scene));
+    }
+    say("↩ back to #" + d.restore_rev, "#9cf");
+  } else {
+    for (const n of nodes) {
+      setWidget(n, "scene", d.prompt || S.scene);
+      setWidget(n, "instruction", d.edit_instruction || "");
+    }
+    say("✎ " + (d.edit_instruction || d.prompt || ""), "#9f9");
+  }
+  app.graph.setDirtyCanvas(true, true);
+  app.queuePrompt(0, 1);
+}
+
 function onEvent(ev) {
   const d = ev.data || {};
   switch (ev.type) {
@@ -170,17 +236,8 @@ function onEvent(ev) {
       break;
     case "render_target": {
       const committed = d.lane === "committed" || (d.lane == null && d.source === "commit");
-      if (!committed || d.restore_rev != null) break;
-      const nodes = voiceNodes();
-      for (const n of nodes) {
-        setWidget(n, "scene", d.prompt || S.scene);
-        setWidget(n, "instruction", d.edit_instruction || "");
-      }
-      if (nodes.length) {
-        app.graph.setDirtyCanvas(true, true);
-        app.queuePrompt(0, 1);
-        say("✎ " + (d.edit_instruction || d.prompt || ""), "#9f9");
-      }
+      if (!committed) break;
+      onCommitTarget(d);
       break;
     }
     case "error":

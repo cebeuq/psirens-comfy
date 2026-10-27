@@ -341,13 +341,17 @@ class ComfyCanvas(Flux2Canvas):
             # edits share the root's seed (a chain on one noise trajectory
             # repaints its past more faithfully); camera moves and region
             # edits need a fresh roll to escape the old framing/content
-            seed = (random.randrange(1 << 31)
-                    if (fresh_seed or camera or region)
-                    else getattr(self, "session_seed", 42))
+
             freeze = not (camera or strength >= GLOBAL_STRENGTH
                           or GLOBAL_EDIT.search(call))
             if not freeze:
-                log.info("whole-image edit: token freeze off")
+                log.info("whole-image edit: token freeze off, fresh seed")
+            # local edits reuse the root's seed (one noise trajectory repaints
+            # its past faithfully); whole-image edits need a fresh roll, or the
+            # same noise pulls the picture straight back to what it was
+            seed = (random.randrange(1 << 31)
+                    if (fresh_seed or region or not freeze)
+                    else getattr(self, "session_seed", 42))
             use_scratch = (provisional and self.scratch is not None
                            and self.scratch_rev == self.rev)
             base_img = self.scratch if use_scratch else self.canvas

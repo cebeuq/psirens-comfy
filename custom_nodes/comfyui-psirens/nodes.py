@@ -37,14 +37,21 @@ class PsirensCanvasSave:
             "slot": ("STRING", {"default": "c0",
                                 "tooltip": "c<rev> for committed revisions, "
                                            "'scratch' for provisional edits"}),
+        }, "optional": {
+            "keyframe": ("INT", {"default": -1, "min": -1, "max": 1 << 30,
+                                 "tooltip": "also keep this canvas as undo "
+                                            "keyframe <slot>@<keyframe> "
+                                            "(set by the Talk button; -1 = no)"}),
         }}
 
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "save"
     CATEGORY = CATEGORY
 
-    def save(self, samples, session, slot):
+    def save(self, samples, session, slot, keyframe=-1):
         canvas_store.put(session, slot, samples)
+        if keyframe is not None and keyframe >= 0:
+            canvas_store.put(session, f"{slot}@{keyframe}", samples)
         return (samples,)
 
 

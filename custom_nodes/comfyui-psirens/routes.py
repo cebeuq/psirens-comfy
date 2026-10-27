@@ -33,6 +33,16 @@ async def canvas_reset(request):
     return web.json_response({"reset": session})
 
 
+@routes.post("/psirens/restore")
+async def canvas_restore(request):
+    """Undo: bring back the canvas latent saved at keyframe `rev`."""
+    body = await request.json()
+    ok = canvas_store.restore(str(body.get("session") or "ui"),
+                              str(body.get("slot") or "latest"),
+                              int(body.get("rev", -1)))
+    return web.json_response({"restored": ok}, status=200 if ok else 404)
+
+
 @routes.get("/psirens/status")
 async def voice_status(request):
     try:

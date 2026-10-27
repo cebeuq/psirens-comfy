@@ -109,7 +109,8 @@
         0
       ],
       "session": "ui",
-      "slot": "latest"
+      "slot": "latest",
+      "keyframe": -1
     }
   },
   "24": {

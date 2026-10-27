@@ -181,8 +181,12 @@ Rules:
    image editor how to change the CURRENT picture (which you may have been
    shown) to satisfy the directive — e.g. "repaint the car on the right
    yellow with blue rims; keep the red car and the street unchanged". Under
-   40 words. In preserve, list up to 5 visible things the edit must not
-   touch. When no image change is needed, edit_instruction is null.
+   40 words. A change to the WHOLE picture (style, medium, time of day,
+   weather, lighting, camera) opens with its scope, the way the FLUX image
+   editor expects: "Convert the entire image into a watercolor painting
+   with soft washes; keep the composition unchanged". In preserve, list up
+   to 5 visible things the edit must not touch. When no image change is
+   needed, edit_instruction is null.
 12. When an attribute of an object changes (its color, its size, its kind),
    rewrite EVERY field and entity description that mentions the old
    attribute — one object must never be described two different ways.
