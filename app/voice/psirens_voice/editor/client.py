@@ -249,7 +249,10 @@ class DeltaEditorClient:
             log.info("speculative parse failed (ignored): %s", e)
         finally:
             evt.set()
-            self._prewarm_evt = None
+            # a superseded (cancelled) prewarm must not clear the handle of
+            # the newer one that replaced it
+            if self._prewarm_evt is evt:
+                self._prewarm_evt = None
 
     async def propose_patch(self, state: SceneState, tone_line: str,
                             directive: str,

@@ -1137,7 +1137,13 @@ class EditorSession:
         if (not directive or self.mode.commit_trigger == "clause"
                 or self.live.pending_commit):
             return
-        asyncio.ensure_future(
+        # only the latest would-be utterance can still win: cancelling the
+        # superseded parse closes its stream, which aborts the generation
+        # server-side (pile-ups of 3-4 parses starved the real commit call)
+        prev = getattr(self, "_prewarm_task", None)
+        if prev is not None and not prev.done():
+            prev.cancel()
+        self._prewarm_task = asyncio.ensure_future(
             self._prewarm_parse(directive, d.get("tone") or {}))
 
     async def _prewarm_parse(self, directive: str, tone: dict) -> None:

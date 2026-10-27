@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 import urllib.request
 import uuid
@@ -44,6 +45,14 @@ LLM_URL = os.environ.get("UPSAMPLE_URL", "http://vllm:8000/v1").rstrip("/")
 LLM_MODEL = os.environ.get("EDITOR_MODEL", "")
 UPSAMPLE_TIMEOUT_S = float(os.environ.get("UPSAMPLE_TIMEOUT_S", "6"))
 ROOT_SUFFIX = os.environ.get("PSIRENS_ROOT_SUFFIX", "")
+# edits that change the whole frame skip the token freeze: BFL's upsampler
+# opens them with their scope ("Convert the entire image into ...")
+GLOBAL_EDIT = re.compile(
+    r"\b(entire|whole) (image|scene|picture|frame|canvas|thing)\b"
+    r"|\b(repaint|redraw|re-render) the (scene|image|picture)\b"
+    r"|\b(convert|turn|transform|restyle) (it|this|everything)\b"
+    r"|\bcamera\b|\bviewpoint\b", re.I)
+GLOBAL_STRENGTH = float(os.environ.get("PSIRENS_GLOBAL_STRENGTH", "0.75"))
 
 # BFL's FLUX 3 edit upsampler instructions (from the official ComfyUI
 # template), run on the scene-editor LLM (it sees the current frame) instead
@@ -198,7 +207,7 @@ class ComfyCanvas(Flux2Canvas):
     # ---- workflow plumbing ----
     def _workflow(self, kind: str, text: str, *, seed: int, steps: int,
                   size: int, slot: str, ref_slot: str | None = None,
-                  asset=None):
+                  asset=None, freeze: bool = True):
         from comfy_sdk import Workflow  # noqa: F401  (type only)
         g = json.loads(json.dumps(self.templates[kind]))
         g["4"]["inputs"]["text"] = text
@@ -210,7 +219,9 @@ class ComfyCanvas(Flux2Canvas):
             g["6"]["inputs"]["width"] = size
             g["6"]["inputs"]["height"] = size
         else:
-            g["24"]["inputs"]["tau"] = PASS_TAU
+            # whole-image edits (restyle, relight, camera) move every token a
+            # little: freezing the ones under the noise floor would undo them
+            g["24"]["inputs"]["tau"] = PASS_TAU if freeze else 0.0
             g["24"]["inputs"]["max_cover"] = PASS_COVER
         if kind == "edit_latent":
             g["20"]["inputs"]["session"] = self.session
@@ -333,6 +344,10 @@ class ComfyCanvas(Flux2Canvas):
             seed = (random.randrange(1 << 31)
                     if (fresh_seed or camera or region)
                     else getattr(self, "session_seed", 42))
+            freeze = not (camera or strength >= GLOBAL_STRENGTH
+                          or GLOBAL_EDIT.search(call))
+            if not freeze:
+                log.info("whole-image edit: token freeze off")
             use_scratch = (provisional and self.scratch is not None
                            and self.scratch_rev == self.rev)
             base_img = self.scratch if use_scratch else self.canvas
@@ -344,7 +359,8 @@ class ComfyCanvas(Flux2Canvas):
                 try:
                     png = self._run(self._workflow(
                         "edit_latent", call, seed=seed, steps=steps,
-                        size=self.size, slot=slot, ref_slot=ref_slot),
+                        size=self.size, slot=slot, ref_slot=ref_slot,
+                        freeze=freeze),
                         on_preview, None if not provisional else cancel_check)
                 except RenderPreempted:
                     raise
@@ -361,7 +377,7 @@ class ComfyCanvas(Flux2Canvas):
                     content_type="image/png")
                 png = self._run(self._workflow(
                     "edit_pixels", call, seed=seed, steps=steps,
-                    size=self.size, slot=slot, asset=asset),
+                    size=self.size, slot=slot, asset=asset, freeze=freeze),
                     on_preview, None if not provisional else cancel_check)
         else:
             call = (prompt or "").strip() or EMPTY_SCENE_PROMPT
