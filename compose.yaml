@@ -166,8 +166,9 @@ services:
       # the Comfy SDK talks Comfy API v2 to the comfy-api service
       COMFY_BASE_URL: http://comfy-api:8189
       FEED_URL: ws://orchestrator:8000/ws/feed
-      FLUX2_SIZE: ${CANVAS_SIZE:-1024}
-      KLEIN_STEPS: ${KLEIN_STEPS:-8}
+      FLUX2_SIZE: ${CANVAS_SIZE:-768}
+      PSIRENS_PROVISIONAL: ${PSIRENS_PROVISIONAL:-0}
+      KLEIN_STEPS: ${KLEIN_STEPS:-6}
       KLEIN_FAST_STEPS: ${KLEIN_FAST_STEPS:-4}
       PSIRENS_PASS_TAU: ${PSIRENS_PASS_TAU:-0.35}
       # FLUX 3 prompt upsampling runs on the editor LLM (sees the frame)

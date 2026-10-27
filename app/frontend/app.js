@@ -339,8 +339,8 @@ document.querySelectorAll(".mode-tab").forEach((b) =>
 paintTabs();
 
 // ---- render resolution ----
-let renderRes = parseInt(localStorage.getItem("psirens_res") || "1024", 10);
-if (![512, 768, 1024].includes(renderRes)) renderRes = 1024;
+let renderRes = parseInt(localStorage.getItem("psirens_res") || "768", 10);
+if (![512, 768, 1024].includes(renderRes)) renderRes = 768;
 function paintRes() {
   // scope to [data-res]: model/gpu buttons share the .res-btn class for
   // styling only and must keep their own active state
@@ -348,7 +348,7 @@ function paintRes() {
     b.classList.toggle("active", parseInt(b.dataset.res, 10) === renderRes));
 }
 function sendRes() {
-  if (![512, 768, 1024].includes(renderRes)) renderRes = 1024;
+  if (![512, 768, 1024].includes(renderRes)) renderRes = 768;
   if (ws && ws.readyState === WebSocket.OPEN)
     ws.send(JSON.stringify({ type: "set_resolution", data: { size: renderRes } }));
 }

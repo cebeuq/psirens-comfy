@@ -31,10 +31,11 @@ from .flux2 import EMPTY_SCENE_PROMPT, Flux2Canvas
 from .preview import RenderPreempted
 
 log = logging.getLogger("renderer.comfy")
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 WF_DIR = os.environ.get("PSIRENS_WORKFLOWS", "/srv/workflows")
 COMFY_URL = os.environ.get("COMFY_URL", "http://comfyui:8188").rstrip("/")
-STEPS = int(os.environ.get("KLEIN_STEPS", "8"))
+STEPS = int(os.environ.get("KLEIN_STEPS", "6"))
 FAST_STEPS = int(os.environ.get("KLEIN_FAST_STEPS", "4"))
 PASS_TAU = float(os.environ.get("PSIRENS_PASS_TAU", "0.35"))
 PASS_COVER = float(os.environ.get("PSIRENS_PASS_COVER", "0.6"))

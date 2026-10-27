@@ -26,6 +26,11 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger("renderer")
 
 MODE = os.environ.get("RENDERER_MODE", "mock")
+# provisional renders (previews of half-finished sentences) are great on a
+# dedicated GPU; on ONE shared card they steal time from the editor LLM at
+# exactly the moment a commit needs it. PSIRENS_PROVISIONAL=0 drops them.
+PROVISIONAL = os.environ.get("PSIRENS_PROVISIONAL", "1") not in ("0", "false",
+                                                                 "no")
 FEED_URL = os.environ.get("FEED_URL", "ws://orchestrator:8000/ws/feed")
 HEARTBEAT = pathlib.Path(os.environ.get("HEARTBEAT_FILE", "/tmp/renderer-heartbeat"))
 MOCK_FRAME_INTERVAL_S = 0.3
@@ -124,6 +129,8 @@ class RendererApp:
                                  and d.get("source") == "commit"))
                 if committed:
                     self.commit_q.append(d)
+                elif not PROVISIONAL:
+                    continue
                 else:
                     self.pending = d
                 self.pending_event.set()
