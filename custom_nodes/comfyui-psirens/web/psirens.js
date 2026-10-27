@@ -79,27 +79,36 @@ function setWidget(node, name, value) {
 }
 
 function mountUi() {
+  // bottom-left, compact: the status line sits ABOVE the button and never
+  // takes clicks, so ComfyUI's own bottom bars stay usable
   const box = document.createElement("div");
+  box.id = "psirens-talk";
   box.style.cssText = "position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;" +
-    "align-items:center;gap:10px;max-width:60vw;font:13px system-ui,sans-serif";
+    "flex-direction:column;align-items:flex-start;gap:8px;font:13px system-ui,sans-serif";
+  const line = document.createElement("div");
+  line.id = "psirens-talk-line";
+  line.style.cssText = "pointer-events:none;color:#ddd;background:#000b;border-radius:8px;" +
+    "padding:6px 10px;display:none;max-width:420px;line-height:1.35;" +
+    "display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden";
+  line.style.display = "none";
   const btn = document.createElement("button");
   btn.textContent = "🎙 Talk";
   btn.title = "Psirens: speak to edit (fills Psirens Voice Prompt nodes and queues)";
   btn.style.cssText = "border:0;border-radius:999px;padding:10px 16px;cursor:pointer;" +
     "font-weight:600;background:#2b2b33;color:#fff;box-shadow:0 2px 10px #0006";
-  const line = document.createElement("div");
-  line.style.cssText = "color:#ddd;background:#0009;border-radius:8px;padding:6px 10px;" +
-    "display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
   btn.onclick = () => (S.live ? stop() : start().catch((e) => fail(e)));
-  box.append(btn, line);
+  box.append(line, btn);
   document.body.append(box);
   ui = { btn, line };
 }
 
+let sayTimer = null;
 function say(text, color = "#ddd") {
-  ui.line.style.display = text ? "block" : "none";
+  ui.line.style.display = text ? "-webkit-box" : "none";
   ui.line.style.color = color;
   ui.line.textContent = text;
+  clearTimeout(sayTimer);
+  if (text && !S.live) sayTimer = setTimeout(() => say(""), 6000);
 }
 function fail(e) {
   say(String(e?.message || e), "#f88");

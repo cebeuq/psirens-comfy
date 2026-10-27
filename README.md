@@ -7,15 +7,17 @@ dusk." The picture appears. "Make the sky purple." Only the sky changes.
 "No, go back." The edit is undone instantly. There's no prompt box and no
 Generate button: you steer by reacting to what you see.
 
-Psirens is two things:
+It runs natively in ComfyUI:
 
-1. **The Psirens app** (`http://localhost:8800`): a browser canvas with a
-   mic. It listens continuously, figures out when you've finished a thought,
-   turns it into a precise edit of a structured scene, and renders it with
-   FLUX 3 Image Klein through ComfyUI.
-2. **`comfyui-psirens`**, a ComfyUI node pack that brings the same thing
-   into any ComfyUI workflow: a **🎙 Talk** button, a *Voice Prompt* node,
-   and nodes that keep long edit chains from drifting.
+1. **The Psirens app, in ComfyUI App Mode.** Open
+   `workflows/psirens_voice_app.app.json`, press **🎙 Talk** and speak. The
+   picture appears, and every later sentence edits it. "No, go back" undoes
+   the last edit exactly.
+2. **`comfyui-psirens`**, the node pack behind it: a *Voice Prompt* node,
+   the 🎙 Talk button (works on any graph with a Voice Prompt node), and
+   nodes that keep long edit chains from drifting.
+3. A standalone web UI (`http://localhost:8800`) with the voice
+   internals on display (live transcript, tone meters, scene state, timeline).
 
 Every model is open weights, and the whole stack runs on your own GPUs.
 
@@ -81,7 +83,9 @@ thought it writes the scene and the edit into each *Psirens Voice Prompt*
 node and queues the graph. Load `workflows/psirens_voice_edit_api.json`
 (FLUX 3 Image Klein, voice-steered, drift-free) and talk.
 
-![The 🎙 Talk button driving a FLUX 3 Image Klein graph in ComfyUI](docs/comfyui-talk.png)
+![Psirens as a native ComfyUI app (App Mode), steered by voice](docs/comfyui-app-mode.png)
+
+![The 🎙 Talk button driving the same FLUX 3 Image Klein graph in the node editor](docs/comfyui-talk.png)
 
 ## Workflows
 
@@ -90,7 +94,8 @@ node and queues the graph. Load `workflows/psirens_voice_edit_api.json`
 | `workflows/psirens_root_api.json` | First image: FLUX 3 Image Klein text-to-image, latent stored for editing |
 | `workflows/psirens_edit_latent_api.json` | Edit referencing the stored canvas latent + token passthrough |
 | `workflows/psirens_edit_pixels_api.json` | Edit from an uploaded frame (after undo past eviction, resolution change) |
-| `workflows/psirens_voice_edit_api.json` | One graph for the 🎙 Talk button inside ComfyUI |
+| `workflows/psirens_voice_app.app.json` | **The app**: ComfyUI App Mode, voice-steered, drift-free, with undo |
+| `workflows/psirens_voice_edit.json` | The same graph for the node editor (🎙 Talk works here too) |
 
 All use the official FLUX 3 Image Klein distilled checkpoint (INT8),
 Qwen3-VL-4B text encoder and FLUX.2 VAE: euler / simple, cfg 1, 8 steps
