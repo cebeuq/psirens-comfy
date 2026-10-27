@@ -123,6 +123,8 @@ class PsirensTokenPassthrough:
         r = reference["samples"].to(device=x.device, dtype=x.dtype)
         if tau <= 0 or x.shape != r.shape or x.ndim != 4:
             return (samples, "passthrough off (shape or tau)")
+        if not torch.any(r):
+            return (samples, "no reference yet (first image)")
         std = r.float().std(dim=(0, 2, 3), keepdim=True).clamp_min(1e-6)
         d = ((x.float() - r.float()) / std).pow(2).mean(dim=1, keepdim=True)
         d = F.avg_pool2d(d, 3, stride=1, padding=1,

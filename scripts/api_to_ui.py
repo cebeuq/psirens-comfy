@@ -55,11 +55,13 @@ def convert(info, api):
                     inputs.append({"name": name, "type": s[0], "link": None, "_src": val})
         outs = [{"name": nm, "type": t, "links": [], "slot_index": i}
                 for i, (t, nm) in enumerate(zip(info[cls]["output"], info[cls].get("output_name") or info[cls]["output"]))]
-        x = 40 + depth[k] * 380
-        y = col_y.get(depth[k], 40)
+        x = 40 + depth[k] * 400
+        y = col_y.get(depth[k], 140)
         h = 90 + 26 * (len(widgets) + max(len(inputs), len(outs)))
-        if any(isinstance(w, str) and "\n" in w or (isinstance(w, str) and len(w) > 40) for w in widgets) or cls == "PsirensVoicePrompt":
-            h += 160
+        if cls == "PsirensVoicePrompt":
+            h += 220
+        if cls in ("SaveImage", "PreviewImage"):
+            h += 420
         col_y[depth[k]] = y + h + 40
         node = {"id": ids[k], "type": cls, "pos": [x, y], "size": [340, h], "flags": {},
                 "order": len(nodes), "mode": 0, "inputs": inputs, "outputs": outs,

@@ -7,11 +7,11 @@
    "type": "UNETLoader",
    "pos": [
     40,
-    40
+    140
    ],
    "size": [
     340,
-    328
+    168
    ],
    "flags": {},
    "order": 0,
@@ -41,7 +41,7 @@
    "type": "CLIPLoader",
    "pos": [
     40,
-    408
+    348
    ],
    "size": [
     340,
@@ -76,7 +76,7 @@
    "type": "VAELoader",
    "pos": [
     40,
-    642
+    582
    ],
    "size": [
     340,
@@ -109,7 +109,7 @@
    "type": "LoadImage",
    "pos": [
     40,
-    824
+    764
    ],
    "size": [
     340,
@@ -147,8 +147,8 @@
    "id": 4,
    "type": "CLIPTextEncode",
    "pos": [
-    420,
-    40
+    440,
+    140
    ],
    "size": [
     340,
@@ -187,8 +187,8 @@
    "id": 11,
    "type": "VAEEncode",
    "pos": [
-    420,
-    222
+    440,
+    322
    ],
    "size": [
     340,
@@ -231,8 +231,8 @@
    "id": 5,
    "type": "ConditioningZeroOut",
    "pos": [
-    800,
-    40
+    840,
+    140
    ],
    "size": [
     340,
@@ -267,8 +267,8 @@
    "id": 12,
    "type": "ReferenceLatent",
    "pos": [
-    800,
-    196
+    840,
+    296
    ],
    "size": [
     340,
@@ -308,8 +308,8 @@
    "id": 14,
    "type": "PsirensEmptyLike",
    "pos": [
-    800,
-    378
+    840,
+    478
    ],
    "size": [
     340,
@@ -344,8 +344,8 @@
    "id": 13,
    "type": "ReferenceLatent",
    "pos": [
-    1180,
-    40
+    1240,
+    140
    ],
    "size": [
     340,
@@ -385,8 +385,8 @@
    "id": 6,
    "type": "KSampler",
    "pos": [
-    1560,
-    40
+    1640,
+    140
    ],
    "size": [
     340,
@@ -444,8 +444,8 @@
    "id": 15,
    "type": "PsirensTokenPassthrough",
    "pos": [
-    1940,
-    40
+    2040,
+    140
    ],
    "size": [
     340,
@@ -495,8 +495,8 @@
    "id": 9,
    "type": "PsirensCanvasSave",
    "pos": [
-    2320,
-    40
+    2440,
+    140
    ],
    "size": [
     340,
@@ -535,8 +535,8 @@
    "id": 7,
    "type": "VAEDecode",
    "pos": [
-    2700,
-    40
+    2840,
+    140
    ],
    "size": [
     340,
@@ -576,12 +576,12 @@
    "id": 8,
    "type": "SaveImage",
    "pos": [
-    3080,
-    40
+    3240,
+    140
    ],
    "size": [
     340,
-    142
+    562
    ],
    "flags": {},
    "order": 14,

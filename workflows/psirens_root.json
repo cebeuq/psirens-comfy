@@ -7,11 +7,11 @@
    "type": "UNETLoader",
    "pos": [
     40,
-    40
+    140
    ],
    "size": [
     340,
-    328
+    168
    ],
    "flags": {},
    "order": 0,
@@ -41,7 +41,7 @@
    "type": "CLIPLoader",
    "pos": [
     40,
-    408
+    348
    ],
    "size": [
     340,
@@ -76,7 +76,7 @@
    "type": "VAELoader",
    "pos": [
     40,
-    642
+    582
    ],
    "size": [
     340,
@@ -108,7 +108,7 @@
    "type": "EmptyFlux2LatentImage",
    "pos": [
     40,
-    824
+    764
    ],
    "size": [
     340,
@@ -141,8 +141,8 @@
    "id": 4,
    "type": "CLIPTextEncode",
    "pos": [
-    420,
-    40
+    440,
+    140
    ],
    "size": [
     340,
@@ -181,8 +181,8 @@
    "id": 5,
    "type": "ConditioningZeroOut",
    "pos": [
-    800,
-    40
+    840,
+    140
    ],
    "size": [
     340,
@@ -217,8 +217,8 @@
    "id": 7,
    "type": "KSampler",
    "pos": [
-    1180,
-    40
+    1240,
+    140
    ],
    "size": [
     340,
@@ -276,8 +276,8 @@
    "id": 10,
    "type": "PsirensCanvasSave",
    "pos": [
-    1560,
-    40
+    1640,
+    140
    ],
    "size": [
     340,
@@ -316,8 +316,8 @@
    "id": 8,
    "type": "VAEDecode",
    "pos": [
-    1940,
-    40
+    2040,
+    140
    ],
    "size": [
     340,
@@ -357,12 +357,12 @@
    "id": 9,
    "type": "SaveImage",
    "pos": [
-    2320,
-    40
+    2440,
+    140
    ],
    "size": [
     340,
-    142
+    562
    ],
    "flags": {},
    "order": 9,
