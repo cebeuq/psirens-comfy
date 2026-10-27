@@ -24,6 +24,15 @@ async def canvas_slots(request):
     return web.json_response(canvas_store.describe())
 
 
+@routes.post("/psirens/reset")
+async def canvas_reset(request):
+    """Forget a session's canvas: the next voice prompt starts a new picture."""
+    body = await request.json() if request.can_read_body else {}
+    session = str((body or {}).get("session") or "ui")
+    canvas_store.drop(session)
+    return web.json_response({"reset": session})
+
+
 @routes.get("/psirens/status")
 async def voice_status(request):
     try:

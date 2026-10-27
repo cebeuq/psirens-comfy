@@ -14,7 +14,7 @@ def is_widget(spec):
     return isinstance(t, list) or t in WIDGET_TYPES
 
 
-def convert(info, api):
+def convert(info, api, layout=None):
     ids = {k: i + 1 for i, k in enumerate(sorted(api, key=int))}
     depth = {}
 
@@ -63,7 +63,10 @@ def convert(info, api):
         if cls in ("SaveImage", "PreviewImage"):
             h += 420
         col_y[depth[k]] = y + h + 40
-        node = {"id": ids[k], "type": cls, "pos": [x, y], "size": [340, h], "flags": {},
+        w = 340
+        if layout and k in layout:
+            x, y, w, h = layout[k]
+        node = {"id": ids[k], "type": cls, "pos": [x, y], "size": [w, h], "flags": {},
                 "order": len(nodes), "mode": 0, "inputs": inputs, "outputs": outs,
                 "properties": {"Node name for S&R": cls}, "widgets_values": widgets}
         if n.get("_meta", {}).get("title"):
@@ -87,4 +90,5 @@ def convert(info, api):
 
 if __name__ == "__main__":
     info = json.load(open(sys.argv[1]))
-    print(json.dumps(convert(info, json.load(open(sys.argv[2]))), indent=1))
+    layout = json.load(open(sys.argv[3])) if len(sys.argv) > 3 else None
+    print(json.dumps(convert(info, json.load(open(sys.argv[2])), layout), indent=1))

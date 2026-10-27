@@ -7,11 +7,11 @@
    "type": "UNETLoader",
    "pos": [
     40,
-    140
+    620
    ],
    "size": [
-    340,
-    168
+    420,
+    110
    ],
    "flags": {},
    "order": 0,
@@ -41,11 +41,11 @@
    "type": "CLIPLoader",
    "pos": [
     40,
-    348
+    760
    ],
    "size": [
-    340,
-    194
+    420,
+    140
    ],
    "flags": {},
    "order": 1,
@@ -76,11 +76,11 @@
    "type": "VAELoader",
    "pos": [
     40,
-    582
+    930
    ],
    "size": [
-    340,
-    142
+    420,
+    90
    ],
    "flags": {},
    "order": 2,
@@ -108,11 +108,11 @@
    "type": "PsirensVoicePrompt",
    "pos": [
     40,
-    764
+    60
    ],
    "size": [
-    340,
-    440
+    420,
+    520
    ],
    "flags": {},
    "order": 3,
@@ -143,12 +143,12 @@
    "id": 4,
    "type": "CLIPTextEncode",
    "pos": [
-    440,
-    140
+    500,
+    60
    ],
    "size": [
-    340,
-    168
+    300,
+    120
    ],
    "flags": {},
    "order": 4,
@@ -191,12 +191,12 @@
    "id": 5,
    "type": "ConditioningZeroOut",
    "pos": [
-    840,
-    140
+    500,
+    220
    ],
    "size": [
-    340,
-    116
+    300,
+    80
    ],
    "flags": {},
    "order": 5,
@@ -227,12 +227,12 @@
    "id": 12,
    "type": "PsirensCanvasReference",
    "pos": [
-    1240,
-    140
+    840,
+    60
    ],
    "size": [
-    340,
-    298
+    320,
+    230
    ],
    "flags": {},
    "order": 6,
@@ -289,20 +289,20 @@
    "widgets_values": [
     "ui",
     "latest",
-    1024,
-    1024
+    768,
+    768
    ]
   },
   {
    "id": 6,
    "type": "KSampler",
    "pos": [
-    1640,
-    140
+    1200,
+    60
    ],
    "size": [
-    340,
-    376
+    320,
+    640
    ],
    "flags": {},
    "order": 7,
@@ -345,7 +345,7 @@
    "widgets_values": [
     1234,
     "fixed",
-    8,
+    6,
     1.0,
     "euler",
     "simple",
@@ -356,12 +356,12 @@
    "id": 10,
    "type": "PsirensTokenPassthrough",
    "pos": [
-    2040,
-    140
+    840,
+    330
    ],
    "size": [
-    340,
-    194
+    320,
+    150
    ],
    "flags": {},
    "order": 8,
@@ -407,12 +407,12 @@
    "id": 9,
    "type": "PsirensCanvasSave",
    "pos": [
-    2440,
-    140
+    840,
+    520
    ],
    "size": [
-    340,
-    168
+    320,
+    110
    ],
    "flags": {},
    "order": 9,
@@ -446,12 +446,12 @@
    "id": 7,
    "type": "VAEDecode",
    "pos": [
-    2840,
-    140
+    840,
+    670
    ],
    "size": [
-    340,
-    142
+    320,
+    80
    ],
    "flags": {},
    "order": 10,
@@ -487,12 +487,12 @@
    "id": 8,
    "type": "SaveImage",
    "pos": [
-    3240,
-    140
+    1560,
+    60
    ],
    "size": [
-    340,
-    562
+    760,
+    820
    ],
    "flags": {},
    "order": 11,

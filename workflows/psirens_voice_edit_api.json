@@ -55,7 +55,7 @@
     "class_type": "KSampler",
     "inputs": {
       "seed": 1234,
-      "steps": 8,
+      "steps": 6,
       "cfg": 1.0,
       "sampler_name": "euler",
       "scheduler": "simple",
@@ -155,8 +155,8 @@
       ],
       "session": "ui",
       "slot": "latest",
-      "width": 1024,
-      "height": 1024
+      "width": 768,
+      "height": 768
     }
   }
 }

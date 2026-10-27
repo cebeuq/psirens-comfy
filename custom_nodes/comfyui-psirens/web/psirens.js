@@ -67,6 +67,9 @@ const WORKLET = URL.createObjectURL(new Blob([WORKLET_SRC], { type: "application
 const S = { ws: null, ctx: null, stream: null, live: false, scene: "" };
 let ui = null;
 
+function api_base() {
+  return location.pathname.replace(/\/[^/]*$/, "");
+}
 function voiceNodes() {
   return (app.graph?._nodes || []).filter((n) => n.type === "PsirensVoicePrompt");
 }
@@ -145,6 +148,17 @@ function stop() {
 function onEvent(ev) {
   const d = ev.data || {};
   switch (ev.type) {
+    case "session_start": {
+      // pressing Talk starts a new picture in every voice-steered session
+      const sessions = new Set(voiceNodes().map((n) =>
+        n.widgets?.find((w) => w.name === "session")?.value || "ui"));
+      for (const session of sessions) {
+        fetch(api_base() + "/psirens/reset", { method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session }) }).catch(() => {});
+      }
+      break;
+    }
     case "partial_transcript":
       if (d.pending) say("… " + d.pending);
       break;
