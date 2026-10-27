@@ -1,0 +1,771 @@
+{
+ "last_node_id": 15,
+ "last_link_id": 19,
+ "nodes": [
+  {
+   "id": 1,
+   "type": "UNETLoader",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    340,
+    328
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "MODEL",
+     "type": "MODEL",
+     "links": [
+      10
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "UNETLoader"
+   },
+   "widgets_values": [
+    "flux3-image-klein-int8-convrot.safetensors",
+    "default"
+   ],
+   "title": "FLUX 3 Image Klein (distilled, INT8)"
+  },
+  {
+   "id": 2,
+   "type": "CLIPLoader",
+   "pos": [
+    40,
+    408
+   ],
+   "size": [
+    340,
+    194
+   ],
+   "flags": {},
+   "order": 1,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "CLIP",
+     "type": "CLIP",
+     "links": [
+      1
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPLoader"
+   },
+   "widgets_values": [
+    "qwen3vl_4b_int8_convrot.safetensors",
+    "flux3",
+    "default"
+   ],
+   "title": "Qwen3-VL 4B text encoder"
+  },
+  {
+   "id": 3,
+   "type": "VAELoader",
+   "pos": [
+    40,
+    642
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 2,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "VAE",
+     "type": "VAE",
+     "links": [
+      3,
+      18
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAELoader"
+   },
+   "widgets_values": [
+    "flux2-vae.safetensors"
+   ]
+  },
+  {
+   "id": 10,
+   "type": "LoadImage",
+   "pos": [
+    40,
+    824
+   ],
+   "size": [
+    340,
+    168
+   ],
+   "flags": {},
+   "order": 3,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      2
+     ],
+     "slot_index": 0
+    },
+    {
+     "name": "MASK",
+     "type": "MASK",
+     "links": [],
+     "slot_index": 1
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "LoadImage"
+   },
+   "widgets_values": [
+    "canvas.png"
+   ],
+   "title": "Current canvas (pixels)"
+  },
+  {
+   "id": 4,
+   "type": "CLIPTextEncode",
+   "pos": [
+    420,
+    40
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 4,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "clip",
+     "type": "CLIP",
+     "link": 1
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      4,
+      5
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "CLIPTextEncode"
+   },
+   "widgets_values": [
+    ""
+   ],
+   "title": "Prompt"
+  },
+  {
+   "id": 11,
+   "type": "VAEEncode",
+   "pos": [
+    420,
+    222
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 5,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "pixels",
+     "type": "IMAGE",
+     "link": 2
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 3
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      6,
+      7,
+      9,
+      15
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAEEncode"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 5,
+   "type": "ConditioningZeroOut",
+   "pos": [
+    800,
+    40
+   ],
+   "size": [
+    340,
+    116
+   ],
+   "flags": {},
+   "order": 6,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 4
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      8
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ConditioningZeroOut"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 12,
+   "type": "ReferenceLatent",
+   "pos": [
+    800,
+    196
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 7,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 5
+    },
+    {
+     "name": "latent",
+     "type": "LATENT",
+     "link": 6
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      11
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ReferenceLatent"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 14,
+   "type": "PsirensEmptyLike",
+   "pos": [
+    800,
+    378
+   ],
+   "size": [
+    340,
+    116
+   ],
+   "flags": {},
+   "order": 8,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 7
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      13
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "PsirensEmptyLike"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 13,
+   "type": "ReferenceLatent",
+   "pos": [
+    1180,
+    40
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 9,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "conditioning",
+     "type": "CONDITIONING",
+     "link": 8
+    },
+    {
+     "name": "latent",
+     "type": "LATENT",
+     "link": 9
+    }
+   ],
+   "outputs": [
+    {
+     "name": "CONDITIONING",
+     "type": "CONDITIONING",
+     "links": [
+      12
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ReferenceLatent"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 6,
+   "type": "KSampler",
+   "pos": [
+    1560,
+    40
+   ],
+   "size": [
+    340,
+    376
+   ],
+   "flags": {},
+   "order": 10,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "model",
+     "type": "MODEL",
+     "link": 10
+    },
+    {
+     "name": "positive",
+     "type": "CONDITIONING",
+     "link": 11
+    },
+    {
+     "name": "negative",
+     "type": "CONDITIONING",
+     "link": 12
+    },
+    {
+     "name": "latent_image",
+     "type": "LATENT",
+     "link": 13
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      14
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "KSampler"
+   },
+   "widgets_values": [
+    0,
+    "fixed",
+    8,
+    1.0,
+    "euler",
+    "simple",
+    1.0
+   ]
+  },
+  {
+   "id": 15,
+   "type": "PsirensTokenPassthrough",
+   "pos": [
+    1940,
+    40
+   ],
+   "size": [
+    340,
+    194
+   ],
+   "flags": {},
+   "order": 11,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 14
+    },
+    {
+     "name": "reference",
+     "type": "LATENT",
+     "link": 15
+    }
+   ],
+   "outputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "links": [
+      16
+     ],
+     "slot_index": 0
+    },
+    {
+     "name": "stats",
+     "type": "STRING",
+     "links": [],
+     "slot_index": 1
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "PsirensTokenPassthrough"
+   },
+   "widgets_values": [
+    0.35,
+    0.6
+   ],
+   "title": "Freeze untouched tokens"
+  },
+  {
+   "id": 9,
+   "type": "PsirensCanvasSave",
+   "pos": [
+    2320,
+    40
+   ],
+   "size": [
+    340,
+    168
+   ],
+   "flags": {},
+   "order": 12,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 16
+    }
+   ],
+   "outputs": [
+    {
+     "name": "LATENT",
+     "type": "LATENT",
+     "links": [
+      17
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "PsirensCanvasSave"
+   },
+   "widgets_values": [
+    "default",
+    "r1"
+   ],
+   "title": "Store canvas latent"
+  },
+  {
+   "id": 7,
+   "type": "VAEDecode",
+   "pos": [
+    2700,
+    40
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 13,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "samples",
+     "type": "LATENT",
+     "link": 17
+    },
+    {
+     "name": "vae",
+     "type": "VAE",
+     "link": 18
+    }
+   ],
+   "outputs": [
+    {
+     "name": "IMAGE",
+     "type": "IMAGE",
+     "links": [
+      19
+     ],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "VAEDecode"
+   },
+   "widgets_values": []
+  },
+  {
+   "id": 8,
+   "type": "SaveImage",
+   "pos": [
+    3080,
+    40
+   ],
+   "size": [
+    340,
+    142
+   ],
+   "flags": {},
+   "order": 14,
+   "mode": 0,
+   "inputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "link": 19
+    }
+   ],
+   "outputs": [
+    {
+     "name": "images",
+     "type": "IMAGE",
+     "links": [],
+     "slot_index": 0
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "SaveImage"
+   },
+   "widgets_values": [
+    "psirens/frame"
+   ],
+   "title": "Canvas frame"
+  }
+ ],
+ "links": [
+  [
+   1,
+   2,
+   0,
+   4,
+   0,
+   "CLIP"
+  ],
+  [
+   2,
+   10,
+   0,
+   11,
+   0,
+   "IMAGE"
+  ],
+  [
+   3,
+   3,
+   0,
+   11,
+   1,
+   "VAE"
+  ],
+  [
+   4,
+   4,
+   0,
+   5,
+   0,
+   "CONDITIONING"
+  ],
+  [
+   5,
+   4,
+   0,
+   12,
+   0,
+   "CONDITIONING"
+  ],
+  [
+   6,
+   11,
+   0,
+   12,
+   1,
+   "LATENT"
+  ],
+  [
+   7,
+   11,
+   0,
+   14,
+   0,
+   "LATENT"
+  ],
+  [
+   8,
+   5,
+   0,
+   13,
+   0,
+   "CONDITIONING"
+  ],
+  [
+   9,
+   11,
+   0,
+   13,
+   1,
+   "LATENT"
+  ],
+  [
+   10,
+   1,
+   0,
+   6,
+   0,
+   "MODEL"
+  ],
+  [
+   11,
+   12,
+   0,
+   6,
+   1,
+   "CONDITIONING"
+  ],
+  [
+   12,
+   13,
+   0,
+   6,
+   2,
+   "CONDITIONING"
+  ],
+  [
+   13,
+   14,
+   0,
+   6,
+   3,
+   "LATENT"
+  ],
+  [
+   14,
+   6,
+   0,
+   15,
+   0,
+   "LATENT"
+  ],
+  [
+   15,
+   11,
+   0,
+   15,
+   1,
+   "LATENT"
+  ],
+  [
+   16,
+   15,
+   0,
+   9,
+   0,
+   "LATENT"
+  ],
+  [
+   17,
+   9,
+   0,
+   7,
+   0,
+   "LATENT"
+  ],
+  [
+   18,
+   3,
+   0,
+   7,
+   1,
+   "VAE"
+  ],
+  [
+   19,
+   7,
+   0,
+   8,
+   0,
+   "IMAGE"
+  ]
+ ],
+ "groups": [],
+ "config": {},
+ "extra": {},
+ "version": 0.4
+}

@@ -67,11 +67,12 @@ services:
       --host 0.0.0.0 --port 8000
       --max-model-len 8192
       --max-num-seqs 8
-      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.55}
+      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.5}
       --limit-mm-per-prompt '{"image":2,"video":0}'
       --mm-processor-kwargs '{"max_pixels":409600}'
       --enable-prefix-caching
       --default-chat-template-kwargs '{"enable_thinking":false}'
+      --speculative-config '{"method":"mtp","num_speculative_tokens":2}'
       --structured-outputs-config '{"backend":"xgrammar","disable_any_whitespace":true}'
     environment:
       HF_HOME: /models/hf
@@ -120,6 +121,7 @@ services:
       EDITOR_MODEL: ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
       DRAFT_MODEL: ${EDITOR_MODEL:-cyankiwi/Qwen3.5-4B-AWQ-4bit}
       PSIRENS_EDIT_MODE: atelier
+      SER_DEVICE: ${SER_DEVICE:-cpu}
       HF_HOME: /models/hf
     volumes:
       - ./app/voice:/srv/app:ro

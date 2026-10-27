@@ -10,6 +10,8 @@ prototype; must be replaced before any commercial use.
 """
 from __future__ import annotations
 
+import os
+
 import logging
 
 import numpy as np
@@ -73,7 +75,9 @@ class SerEngine:
         # GB10/sm_121: cuDNN can't find an engine for these conv1d shapes, so
         # cuDNN is disabled for the SER forward (see infer). Verify the GPU
         # path with a probe; fall back to CPU if it still fails.
-        self.device = "cuda"
+        # SER_DEVICE=cpu keeps the GPU for STT + the editor LLM on small
+        # cards (one 3s window per second is cheap enough on CPU)
+        self.device = os.environ.get("SER_DEVICE", "cuda")
         self._model = model.to(self.device)
         try:
             self._probe()

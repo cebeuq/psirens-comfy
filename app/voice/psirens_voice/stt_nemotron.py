@@ -65,8 +65,14 @@ class NemotronSttEngine:
         import nemo.collections.asr as nemo_asr
         from omegaconf import open_dict
 
-        m = nemo_asr.models.ASRModel.from_pretrained(model_name=name)
+        # restore on CPU, then move: restoring straight onto the GPU holds
+        # the checkpoint AND the model there at once (~2x peak VRAM), which
+        # does not fit next to the editor LLM on a 10 GB card
+        import torch
+        m = nemo_asr.models.ASRModel.from_pretrained(
+            model_name=name, map_location=torch.device("cpu"))
         m = m.to("cuda").eval()
+        torch.cuda.empty_cache()
         if ctx is not None:
             m.encoder.set_default_att_context_size(ctx)
             m.encoder.setup_streaming_params()

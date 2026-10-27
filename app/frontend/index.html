@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Psirens — Voice Intent Engine</title>
+<title>Psirens — talk to your canvas</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <div class="brand">psirens <span class="sub">voice intent engine</span></div>
+  <div class="brand">psirens <span class="sub">talk to your canvas</span></div>
   <button id="micBtn" class="mic-btn" title="start / stop (resets the session)">&#127908; start</button>
   <button id="pauseBtn" class="mic-btn" title="pause / resume listening (keeps the canvas and history)" hidden>&#9208; pause</button>
   <canvas id="waveform" width="360" height="44"></canvas>
@@ -27,16 +27,12 @@
     <button class="res-btn" data-res="512" title="render resolution">512</button>
     <button class="res-btn" data-res="768" title="render resolution">768</button>
     <button class="res-btn" data-res="1024" title="render resolution">1024</button>
-    <button id="gpuFreeBtn" class="res-btn gpu-btn"
+    <button id="gpuFreeBtn" class="res-btn gpu-btn" hidden
             title="unload all models so the GPU is free for other work">free gpu</button>
-    <button id="gpuLoadBtn" class="res-btn gpu-btn"
+    <button id="gpuLoadBtn" class="res-btn gpu-btn" hidden
             title="reload all models onto the GPU">load gpu</button>
-    <button class="res-btn engine-btn" data-engine="klein"
-            title="FLUX.2 Klein 9B — fastest, full edit machinery">klein</button>
-    <button class="res-btn engine-btn" data-engine="u15"
-            title="SenseNova U1.5 8B — strongest instruction following">u1.5</button>
-    <button class="res-btn engine-btn" data-engine="h3"
-            title="MiniMax H3 33B — heaviest, single-frame video engine">h3</button>
+    <span class="chip on engine-badge"
+          title="every frame is a FLUX 3 Image Klein workflow run in ComfyUI via the Comfy SDK">ComfyUI · FLUX 3 Image Klein</span>
   </div>
 </header>
 
