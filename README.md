@@ -19,6 +19,14 @@ Psirens is two things:
 
 Every model is open weights, and the whole stack runs on your own GPUs.
 
+![The Psirens app: three spoken sentences, three edits](docs/app.png)
+
+*Spoken: "A cozy wooden cabin in a snowy pine forest at dusk…", "Make the
+sky a deep purple with a few stars", "Add a red sled in the snow in front of
+the cabin". Each edit changes only what was named:*
+
+![Edit chain: root, purple sky, sled, no-op, heavy snow](docs/edit-chain.jpg)
+
 ## How it works
 
 ```
@@ -72,6 +80,8 @@ ComfyUI (`/psirens/ws`) to the Psirens voice service. On every finished
 thought it writes the scene and the edit into each *Psirens Voice Prompt*
 node and queues the graph. Load `workflows/psirens_voice_edit_api.json`
 (FLUX 3 Image Klein, voice-steered, drift-free) and talk.
+
+![The 🎙 Talk button driving a FLUX 3 Image Klein graph in ComfyUI](docs/comfyui-talk.png)
 
 ## Workflows
 
