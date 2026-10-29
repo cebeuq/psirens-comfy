@@ -193,20 +193,20 @@ async function onCommitTarget(d) {
   for (const n of app.graph._nodes.filter((n) => n.type === "PsirensCanvasSave")) {
     setWidget(n, "keyframe", rev);
   }
+  // undo: the run itself references keyframe <slot>@<rev>. (Swapping the
+  // store from outside raced with an edit still in ComfyUI's queue; prompts
+  // run strictly in order, so a per-run reference cannot be overtaken.)
+  const refs = app.graph._nodes.filter((n) => n.type === "PsirensCanvasReference");
+  for (const n of refs) {
+    n.properties = n.properties || {};
+    if (n.properties.psirens_slot == null) n.properties.psirens_slot = widgetValue(n, "slot", "latest");
+    setWidget(n, "slot", d.restore_rev != null
+      ? n.properties.psirens_slot + "@" + d.restore_rev : n.properties.psirens_slot);
+  }
   if (d.restore_rev != null) {
-    let restored = false;
-    for (const n of nodes) {
-      const r = await fetch(api_base() + "/psirens/restore", { method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session: widgetValue(n, "session", "ui"),
-                               slot: widgetValue(n, "slot", "latest"),
-                               rev: d.restore_rev }) }).catch(() => null);
-      restored = restored || (r && r.ok);
-    }
     for (const n of nodes) {
       setWidget(n, "scene", d.prompt || S.scene);
-      setWidget(n, "instruction", restored ? "Keep everything exactly the same."
-        : "Redraw the image to match: " + (d.prompt || S.scene));
+      setWidget(n, "instruction", "Keep everything exactly the same.");
     }
     say("↩ back to #" + d.restore_rev, "#9cf");
   } else {

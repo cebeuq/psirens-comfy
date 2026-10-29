@@ -216,6 +216,8 @@ class PsirensCanvasReference:
     def apply(self, positive, negative, session, slot, width, height):
         import node_helpers
         ref = canvas_store.get(session, slot)
+        if ref is None and "@" in slot:      # keyframe evicted: current canvas
+            ref = canvas_store.get(session, slot.split("@", 1)[0])
         if ref is None:
             empty = {"samples": torch.zeros(
                 [1, 128, height // 16, width // 16])}
