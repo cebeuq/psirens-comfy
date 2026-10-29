@@ -112,7 +112,7 @@ node and queues the graph. Load `workflows/psirens_voice_edit_api.json`
 
 All use the official FLUX 3 Image Klein distilled checkpoint (INT8),
 Qwen3-VL-4B text encoder and FLUX.2 VAE: euler / simple, cfg 1, 8 steps
-(4 for provisional previews).
+(6 in the voice app, 4 for provisional previews).
 
 ## Run it
 
