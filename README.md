@@ -67,6 +67,19 @@ mic ─▶ speech-to-text ─▶ commit detector ─▶ scene editor (LLM) ─�
   repaint-noise floor back **bit-exactly** from the reference. Regions the
   edit didn't touch stop aging, however long you talk.
 
+### Proof: 12 edits of "keep everything exactly the same"
+
+Same FLUX 3 Image Klein graph, same seed, 12 chained no-op edits starting
+from the first frame. Left to right: start, a normal ComfyUI edit loop after
+4 and 12 edits (save → load → VAE-encode → edit), and Psirens after 12.
+
+![Drift proof](docs/drift-proof.jpg)
+
+| after 12 edits | normal loop | Psirens |
+|---|---|---|
+| pixels changed vs. start | 86% | 0.5% (first encode only; edits 2–12 are bit-identical) |
+| PSNR vs. start | 17.1 dB | 38.7 dB |
+
 ## The node pack (`custom_nodes/comfyui-psirens`)
 
 | Node | What it does |
