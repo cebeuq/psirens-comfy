@@ -2,6 +2,7 @@
 // Speech -> transcript -> scene editor (Psirens voice service) -> the voice
 // prompt's `scene` + `instruction` widgets are filled -> the graph is queued.
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 
 // The AudioWorklet runs from a Blob URL: ComfyUI loads every .js file in
 // web/ as an extension, so the worklet cannot live there as its own file.
@@ -217,7 +218,52 @@ async function onCommitTarget(d) {
     say("✎ " + (d.edit_instruction || d.prompt || ""), "#9f9");
   }
   app.graph.setDirtyCanvas(true, true);
+  await queueRun();
+}
+
+// Every spoken edit runs through the Comfy SDK and the Comfy API (see
+// routes.py); ComfyUI's own queue is only the fallback when no Comfy API
+// is configured.
+async function queueRun() {
+  const wf = frontendStore("workflow")?.activeWorkflow;   // before any await
+  try {
+    const { output } = await app.graphToPrompt();
+    const r = await fetch(api_base() + "/psirens/submit", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: output, client_id: api.clientId }),
+    });
+    if (r.ok) {
+      adoptJob((await r.json()).job_id, output, wf);
+      return;
+    }
+    console.warn("psirens: Comfy API submit failed, queueing locally:", await r.text());
+  } catch (e) {
+    console.warn("psirens: Comfy API submit failed, queueing locally:", e);
+  }
   app.queuePrompt(0, 1);
+}
+
+function frontendStore(id) {
+  return document.querySelector("#vue-app")?.__vue_app__?.config
+    ?.globalProperties?.$pinia?._s.get(id);
+}
+
+// Register the Comfy API job with the ComfyUI frontend the way its own Run
+// button does, so App Mode, the queue and progress treat it as this
+// workflow's run (its events arrive via the mirror in routes.py).
+function adoptJob(jobId, output, wf) {
+  try {
+    const exec = frontendStore("execution");
+    if (!jobId || !wf || !exec?.storeJob) return;
+    const now = performance.now();
+    exec.storeJob({
+      id: jobId, nodes: Object.keys(output), promptOutput: output,
+      startTime: now, submissionAcceptedAt: now, workflow: wf,
+      mode: wf.activeMode ?? wf.initialMode ?? "graph",
+    });
+  } catch (e) {
+    console.warn("psirens: could not register the job with the UI:", e);
+  }
 }
 
 function onEvent(ev) {

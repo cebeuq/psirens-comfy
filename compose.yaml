@@ -38,6 +38,8 @@ services:
       - comfy-input:/opt/comfyui/input
     environment:
       PSIRENS_VOICE_URL: http://orchestrator:8000
+      # Talk-button runs go through the Comfy SDK to the Comfy API (comfy-api)
+      COMFY_BASE_URL: http://comfy-api:8189
     deploy:
       resources:
         reservations:

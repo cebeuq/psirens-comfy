@@ -3,6 +3,12 @@
 /psirens/ws bridges the browser's mic stream to the Psirens voice service
 (speech-to-text, prosody, commit detection, LLM scene editor) with feed=0,
 so the voice service only listens and edits the scene: ComfyUI renders.
+
+/psirens/submit runs each spoken edit through the Comfy Developer Platform:
+the Comfy SDK submits the graph to the Comfy API (v2, served by Comfy's
+comfy-api-proxy at COMFY_BASE_URL), which queues it on this ComfyUI. The
+job's progress, previews and outputs are mirrored to the browser that
+pressed Talk, so App Mode and the node editor show them as usual.
 """
 import asyncio
 import json
@@ -16,7 +22,84 @@ from . import canvas_store
 
 VOICE_URL = os.environ.get("PSIRENS_VOICE_URL",
                            "http://127.0.0.1:8800").rstrip("/")
-routes = PromptServer.instance.routes
+server = PromptServer.instance
+routes = server.routes
+
+# ---- Talk runs via the Comfy SDK -> Comfy API -------------------------------
+# ComfyUI addresses a job's events to the client_id that queued it; through
+# the Comfy API that is the API job, not the browser. When the API queues a
+# Talk run here, remember which browser it belongs to and copy that job's
+# events to it.
+_talk_waiting: list[str] = []      # browser client ids, oldest first
+_mirror: dict[str, str] = {}       # Comfy API job client_id -> browser
+_flagged: set[str] = set()         # job client ids we gave preview flags
+_DONE = {"execution_success", "execution_error", "execution_interrupted"}
+_sdk = None
+
+
+def _on_prompt(json_data):
+    prompt = json_data.get("prompt") or {}
+    cid = json_data.get("client_id")
+    if cid and _talk_waiting and any(
+            isinstance(n, dict) and n.get("class_type") == "PsirensVoicePrompt"
+            for n in prompt.values()):
+        _mirror[cid] = _talk_waiting.pop(0)
+        # live previews: ComfyUI sends the App Mode preview format only to
+        # clients that advertise it, so advertise it for the API job
+        if cid not in server.sockets_metadata:
+            server.sockets_metadata[cid] = {
+                "feature_flags": {"supports_preview_metadata": True}}
+            _flagged.add(cid)
+    return json_data
+
+
+server.add_on_prompt_handler(_on_prompt)
+_send = server.send
+
+
+async def _send_mirrored(event, data, sid=None):
+    await _send(event, data, sid)
+    to = _mirror.get(sid) if sid else None
+    if to and to != sid:
+        await _send(event, data, to)
+        if event in _DONE:
+            _mirror.pop(sid, None)
+            if sid in _flagged:
+                _flagged.discard(sid)
+                server.sockets_metadata.pop(sid, None)
+
+
+server.send = _send_mirrored
+
+
+def _sdk_submit(graph: dict) -> str:
+    global _sdk
+    from comfy_sdk import Comfy        # COMFY_BASE_URL names the Comfy API
+    if _sdk is None:
+        _sdk = Comfy()
+    return _sdk.submit(_sdk.workflows.from_json(graph)).id
+
+
+@routes.post("/psirens/submit")
+async def talk_submit(request):
+    """Queue a Talk run through the Comfy SDK and the Comfy API."""
+    body = await request.json()
+    graph = body.get("prompt")
+    browser = str(body.get("client_id") or "")
+    if not isinstance(graph, dict) or not browser:
+        return web.json_response({"error": "need prompt and client_id"},
+                                 status=400)
+    if not os.environ.get("COMFY_BASE_URL"):
+        return web.json_response({"error": "COMFY_BASE_URL not set"},
+                                 status=501)
+    _talk_waiting.append(browser)
+    try:
+        job_id = await asyncio.to_thread(_sdk_submit, graph)
+    except Exception as e:
+        if browser in _talk_waiting:
+            _talk_waiting.remove(browser)
+        return web.json_response({"error": f"comfy api: {e}"}, status=502)
+    return web.json_response({"job_id": job_id, "via": "comfy-sdk"})
 
 
 @routes.get("/psirens/canvas")

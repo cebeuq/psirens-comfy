@@ -95,8 +95,18 @@ from the first frame. Left to right: start, a normal ComfyUI edit loop after
 The **🎙 Talk** button (bottom-left in ComfyUI) streams your mic through
 ComfyUI (`/psirens/ws`) to the Psirens voice service. On every finished
 thought it writes the scene and the edit into each *Psirens Voice Prompt*
-node and queues the graph. Load `workflows/psirens_voice_edit_api.json`
-(FLUX 3 Image Klein, voice-steered, drift-free) and talk.
+node and runs the graph **through the Comfy Developer Platform**: the node
+pack's `/psirens/submit` route submits it with the **Comfy SDK** to the
+**Comfy API** (v2, served by Comfy's `comfy-api-proxy` at `COMFY_BASE_URL`),
+which queues it on ComfyUI. The job's progress, live previews and outputs
+are routed back to the browser that pressed Talk, so App Mode and the node
+editor show them as usual. (Without `COMFY_BASE_URL` it falls back to
+ComfyUI's own queue.) Load `workflows/psirens_voice_edit_api.json` (FLUX 3
+Image Klein, voice-steered, drift-free) and talk.
+
+```
+🎙 Talk ─▶ /psirens/submit ─▶ Comfy SDK ─▶ Comfy API (comfy-api-proxy) ─▶ ComfyUI ─▶ App Mode
+```
 
 ![Psirens as a native ComfyUI app (App Mode), steered by voice](docs/comfyui-app-mode.png)
 

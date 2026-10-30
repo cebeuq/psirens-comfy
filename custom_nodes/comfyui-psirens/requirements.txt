@@ -1,1 +1,3 @@
 # comfyui-psirens runtime deps (torch/numpy come with ComfyUI)
+# Talk-button runs are submitted through the Comfy SDK (Comfy API v2)
+comfy-sdk==0.5.0
