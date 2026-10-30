@@ -7,7 +7,7 @@ dusk." The picture appears. "Make the sky purple." Only the sky changes.
 "No, go back." The edit is undone instantly. There's no prompt box and no
 Generate button: you steer by reacting to what you see.
 
-**[Watch the demo video (1:42)](docs/psirens-demo.mp4)**
+**[Watch the demo video (1:47)](docs/psirens-demo.mp4)**
 
 It runs natively in ComfyUI:
 
